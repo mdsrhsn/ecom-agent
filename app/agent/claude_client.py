@@ -23,7 +23,7 @@ from app.config import settings
 from app.agent.tools import TOOL_SPECS, run_tool
 
 
-MODEL_NAME = "gemini-2.5-flash"   # free tier, fast, supports function calling
+MODEL_NAME = "gemini-2.5-flash-lite"   # higher free tier (1000 RPD vs 20 RPD on flash)
 
 
 SYSTEM_PROMPT = """You are an AI agent helping Mudassar manage his e-commerce business.

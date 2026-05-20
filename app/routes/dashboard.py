@@ -56,7 +56,7 @@ def _build_report(db: Session) -> dict:
         report["delivered_today"] = (
             db.query(func.count(Shipment.id))
             .filter(
-                Shipment.status == "delivered",
+                Shipment.current_status == "delivered",
                 Shipment.delivered_at >= start_today,
                 Shipment.delivered_at < end_today,
             )
