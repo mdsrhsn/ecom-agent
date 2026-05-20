@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Shipments{% endblock %}
+{% block content %}
+
+<h1>Shipments</h1>
+
+<div class="card">
+  <form method="get" style="display:flex; gap:12px;">
+    <select name="status">
+      <option value="">All statuses</option>
+      <option value="BOOKED" {% if status_filter=="BOOKED" %}selected{% endif %}>BOOKED</option>
+      <option value="ARRIVED_WAREHOUSE" {% if status_filter=="ARRIVED_WAREHOUSE" %}selected{% endif %}>ARRIVED_WAREHOUSE</option>
+      <option value="IN_TRANSIT" {% if status_filter=="IN_TRANSIT" %}selected{% endif %}>IN_TRANSIT</option>
+      <option value="OUT_FOR_DELIVERY" {% if status_filter=="OUT_FOR_DELIVERY" %}selected{% endif %}>OUT_FOR_DELIVERY</option>
+      <option value="DELIVERED" {% if status_filter=="DELIVERED" %}selected{% endif %}>DELIVERED</option>
+      <option value="RETURN_IN_PROCESS" {% if status_filter=="RETURN_IN_PROCESS" %}selected{% endif %}>RETURN_IN_PROCESS</option>
+      <option value="RETURN_TO_SHIPPER" {% if status_filter=="RETURN_TO_SHIPPER" %}selected{% endif %}>RETURN_TO_SHIPPER</option>
+      <option value="RETURNED" {% if status_filter=="RETURNED" %}selected{% endif %}>RETURNED</option>
+    </select>
+    <select name="courier">
+      <option value="">All couriers</option>
+      <option value="postex" {% if courier_filter=="postex" %}selected{% endif %}>PostEx</option>
+      <option value="daewoo" {% if courier_filter=="daewoo" %}selected{% endif %}>Daewoo</option>
+      <option value="digidokaan" {% if courier_filter=="digidokaan" %}selected{% endif %}>DigiDokaan</option>
+      <option value="leopards" {% if courier_filter=="leopards" %}selected{% endif %}>Leopards</option>
+    </select>
+    <button type="submit">Filter</button>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr><th>CN</th><th>Courier</th><th>Order</th><th>Customer</th><th>City</th><th>COD</th><th>Status</th><th>Booked</th><th>Delivered</th></tr>
+    </thead>
+    <tbody>
+      {% for s in shipments %}
+      <tr>
+        <td>{{ s.tracking_number }}</td>
+        <td>{{ s.courier.upper() }}</td>
+        <td>{{ s.order.order_number if s.order else '' }}</td>
+        <td>{{ s.order.customer_name if s.order else '' }}</td>
+        <td>{{ s.order.city if s.order else '' }}</td>
+        <td>PKR {{ "%.0f"|format(s.order.cod_amount) if s.order else '' }}</td>
+        <td>
+          {% if s.is_critical %}<span class="badge badge-danger">{{ s.status }}</span>
+          {% elif s.status == "DELIVERED" %}<span class="badge badge-ok">{{ s.status }}</span>
+          {% else %}<span class="badge badge-warn">{{ s.status }}</span>{% endif %}
+        </td>
+        <td>{{ s.booked_at.strftime('%d %b') if s.booked_at else '' }}</td>
+        <td>{{ s.delivered_at.strftime('%d %b') if s.delivered_at else '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
