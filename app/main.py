@@ -1,4 +1,5 @@
 """FastAPI app entry point."""
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -38,7 +39,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Ecom Agent", version="0.1", lifespan=lifespan)
 app.include_router(api.router)
 app.include_router(dashboard.router)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Mount static dir only if it exists (Railway may not deploy empty dirs).
+if os.path.isdir("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/health")
