@@ -51,7 +51,11 @@ def _build_report(db: Session) -> dict:
         report["inventory_ledger"] = get_inventory_ledger(db) or report["inventory_ledger"]
         report["returns"] = get_returns_breakdown(db) or report["returns"]
 
-        start_today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        # "Today" in Pakistan time (UTC+5), then convert window back to UTC for DB.
+        PKT_OFFSET = timedelta(hours=5)
+        now_pkt = datetime.utcnow() + PKT_OFFSET
+        today_pkt = now_pkt.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_today = today_pkt - PKT_OFFSET  # UTC timestamp of PKT midnight
         end_today = start_today + timedelta(days=1)
         report["delivered_today"] = (
             db.query(func.count(Shipment.id))

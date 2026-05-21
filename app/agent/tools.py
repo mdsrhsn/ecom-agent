@@ -127,10 +127,19 @@ TOOL_SPECS = [
 
 
 def _date_range(days_back: int):
-    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    start = today - timedelta(days=days_back)
-    end = start + timedelta(days=1)
-    return start, end
+    """
+    Return (start, end) UTC datetimes for "today" in Pakistan time (Asia/Karachi, UTC+5).
+    Pakistan has no DST so a fixed +5 hour offset is correct year-round.
+    Orders are stored as UTC in DB; we shift the day boundary so that
+    "today" matches what Mudassar sees on his clock in Pakistan.
+    """
+    PKT_OFFSET = timedelta(hours=5)
+    now_pkt = datetime.utcnow() + PKT_OFFSET
+    today_pkt_midnight = now_pkt.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Convert that PKT midnight back to UTC for the DB filter:
+    start_utc = today_pkt_midnight - PKT_OFFSET - timedelta(days=days_back)
+    end_utc = start_utc + timedelta(days=1)
+    return start_utc, end_utc
 
 
 def get_daily_order_summary(db: Session, days_back: int = 0) -> dict:
