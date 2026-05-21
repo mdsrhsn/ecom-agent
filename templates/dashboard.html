@@ -6,29 +6,29 @@
 
 <div class="grid-4">
   <div class="card">
-    <div class="kpi-label">New Orders</div>
-    <div class="kpi-value">{{ report.new_orders.total }}</div>
+    <div class="kpi-label">📥 New Orders</div>
+    <div class="kpi-value">{{ report.new_orders.total_orders or report.new_orders.total or 0 }}</div>
   </div>
   <div class="card">
-    <div class="kpi-label">Booked Today</div>
-    <div class="kpi-value">{{ report.bookings_today.total }}</div>
+    <div class="kpi-label">🚚 Booked Today</div>
+    <div class="kpi-value">{{ report.bookings_today.total_booked or report.bookings_today.total or 0 }}</div>
   </div>
   <div class="card">
-    <div class="kpi-label">Delivered Today</div>
-    <div class="kpi-value">{{ report.delivered_today }}</div>
+    <div class="kpi-label">✅ Delivered Today</div>
+    <div class="kpi-value">{{ report.delivered_today or 0 }}</div>
   </div>
   <div class="card">
-    <div class="kpi-label">Critical</div>
-    <div class="kpi-value" style="color:var(--danger)">{{ report.critical_undelivered.count }}</div>
+    <div class="kpi-label">🚨 Critical</div>
+    <div class="kpi-value">{{ report.critical_undelivered.count or 0 }}</div>
   </div>
 </div>
 
 <div class="grid-2">
   <div class="card">
-    <h2>New orders by city</h2>
+    <h2>📍 New orders by city</h2>
     <ul class="row-list">
       {% for city, n in report.new_orders.by_city.items() %}
-        <li><strong>{{ city }}</strong>: {{ n }}</li>
+        <li><strong>{{ city }}</strong> <span style="color:var(--primary);font-weight:700">{{ n }}</span></li>
       {% else %}
         <li style="color:var(--muted)">No orders today yet.</li>
       {% endfor %}
@@ -36,10 +36,10 @@
   </div>
 
   <div class="card">
-    <h2>Bookings by courier</h2>
+    <h2>📦 Bookings by courier</h2>
     <ul class="row-list">
       {% for c, n in report.bookings_today.by_courier.items() %}
-        <li><strong>{{ c.upper() }}</strong>: {{ n }}</li>
+        <li><strong>{{ c.upper() }}</strong> <span style="color:var(--accent);font-weight:700">{{ n }}</span></li>
       {% else %}
         <li style="color:var(--muted)">No bookings yet.</li>
       {% endfor %}
@@ -67,12 +67,12 @@
     <tbody>
       {% for it in critical_items %}
       <tr>
-        <td>{{ it.tracking }}</td>
+        <td><code>{{ it.tracking }}</code></td>
         <td><span class="badge badge-warn">{{ it.courier.upper() }}</span></td>
         <td>{{ it.customer }}</td>
         <td>{{ it.phone }}</td>
         <td>{{ it.city }}</td>
-        <td>PKR {{ "%.0f"|format(it.cod_amount or 0) }}</td>
+        <td><strong>PKR {{ "%.0f"|format(it.cod_amount or 0) }}</strong></td>
         <td>{{ it.status }}</td>
         <td><span class="badge badge-danger">{{ it.days_since_booking }}d</span></td>
       </tr>
@@ -80,7 +80,7 @@
     </tbody>
   </table>
   {% else %}
-    <p style="color:var(--muted)">All clear — no critical items right now.</p>
+    <p style="color:var(--muted)">All clear — no critical items right now. 🎉</p>
   {% endif %}
 </div>
 
@@ -88,7 +88,7 @@
   <h2>💰 Payment overdue (7+ days post-delivery)</h2>
   {% set overdue_items = report.payment_overdue["items"] %}
   {% if overdue_items %}
-  <p>Total pending: <strong>PKR {{ "%.0f"|format(report.payment_overdue.total_pending_pkr or 0) }}</strong></p>
+  <p style="font-size:15px;margin:0 0 16px;">Total pending: <strong style="color:var(--danger);font-size:18px">PKR {{ "%.0f"|format(report.payment_overdue.total_pending_pkr or report.payment_overdue.total_amount or 0) }}</strong></p>
   <table>
     <thead>
       <tr>
@@ -102,11 +102,11 @@
     <tbody>
       {% for it in overdue_items %}
       <tr>
-        <td>{{ it.tracking }}</td>
+        <td><code>{{ it.tracking }}</code></td>
         <td>{{ it.order_number }}</td>
-        <td>{{ it.courier.upper() }}</td>
-        <td>PKR {{ "%.0f"|format(it.amount_due or 0) }}</td>
-        <td>{{ it.days_since_delivery }}d</td>
+        <td><span class="badge badge-warn">{{ it.courier.upper() }}</span></td>
+        <td><strong>PKR {{ "%.0f"|format(it.amount_due or it.amount or 0) }}</strong></td>
+        <td><span class="badge badge-danger">{{ it.days_since_delivery }}d</span></td>
       </tr>
       {% endfor %}
     </tbody>
@@ -119,19 +119,37 @@
 <div class="card">
   <h2>📊 Inventory ledger</h2>
   <div class="grid-3">
-    <div><div class="kpi-label">Pcs shipped</div><div class="kpi-value">{{ report.inventory_ledger.pcs_shipped }}</div></div>
-    <div><div class="kpi-label">Pcs paid</div><div class="kpi-value" style="color:var(--accent)">{{ report.inventory_ledger.pcs_paid }}</div></div>
-    <div><div class="kpi-label">Pcs returned (in hand)</div><div class="kpi-value">{{ report.inventory_ledger.pcs_returned }}</div></div>
-    <div><div class="kpi-label">Return in process</div><div class="kpi-value" style="color:var(--warn)">{{ report.inventory_ledger.pcs_return_in_process }}</div></div>
-    <div><div class="kpi-label">Return to shipper</div><div class="kpi-value" style="color:var(--warn)">{{ report.inventory_ledger.pcs_return_to_shipper }}</div></div>
-    <div><div class="kpi-label">Pending</div><div class="kpi-value">{{ report.inventory_ledger.pcs_pending }}</div></div>
+    <div>
+      <div class="kpi-label">Pcs shipped</div>
+      <div class="kpi-value">{{ report.inventory_ledger.pcs_sent_to_courier or report.inventory_ledger.pcs_shipped or 0 }}</div>
+    </div>
+    <div>
+      <div class="kpi-label">Pcs paid</div>
+      <div class="kpi-value" style="color:var(--accent)">{{ report.inventory_ledger.pcs_paid or 0 }}</div>
+    </div>
+    <div>
+      <div class="kpi-label">Pcs received back</div>
+      <div class="kpi-value">{{ report.inventory_ledger.pcs_received_back or report.inventory_ledger.pcs_returned or 0 }}</div>
+    </div>
+    <div>
+      <div class="kpi-label">Return in process</div>
+      <div class="kpi-value" style="color:var(--warn)">{{ report.inventory_ledger.pcs_return_in_process or 0 }}</div>
+    </div>
+    <div>
+      <div class="kpi-label">Return to shipper</div>
+      <div class="kpi-value" style="color:var(--warn)">{{ report.inventory_ledger.pcs_return_to_shipper or 0 }}</div>
+    </div>
+    <div>
+      <div class="kpi-label">Pending</div>
+      <div class="kpi-value" style="color:var(--primary)">{{ report.inventory_ledger.pcs_pending or 0 }}</div>
+    </div>
   </div>
 </div>
 
 <!-- ============== CHAT PANEL ============== -->
 <div class="card" id="chat-card">
   <h2>💬 Ask the agent</h2>
-  <p style="color:var(--muted); font-size:0.9em; margin-top:-8px">
+  <p style="color:var(--muted); font-size:13.5px; margin: -4px 0 14px">
     Roman Urdu / English mein pochein. Examples:
     <em>"aaj kitne orders aaye?"</em>,
     <em>"critical parcels dikhao"</em>,
@@ -139,22 +157,19 @@
   </p>
 
   <div id="chat-messages" style="
-       min-height:120px; max-height:420px; overflow-y:auto;
-       background:#fafafa; border:1px solid #eee; border-radius:8px;
-       padding:12px; margin:12px 0; font-size:0.95em;">
+       min-height:140px; max-height:420px; overflow-y:auto;
+       padding:14px; margin:12px 0; font-size:14px;">
     <div style="color:var(--muted); font-style:italic">
       Koi message likh kar bhejein...
     </div>
   </div>
 
-  <div style="display:flex; gap:8px;">
+  <div style="display:flex; gap:10px;">
     <input id="chat-input" type="text"
            placeholder="aaj kitne orders aaye?"
-           style="flex:1; padding:10px; border:1px solid #ccc; border-radius:6px; font-size:1em;"
-           onkeydown="if(event.key==='Enter'){sendMessage();}">
-    <button onclick="sendMessage()"
-            style="padding:10px 20px; background:#2563eb; color:white;
-                   border:none; border-radius:6px; cursor:pointer; font-weight:600;">
+           onkeydown="if(event.key==='Enter'){sendMessage();}"
+           style="flex:1;">
+    <button onclick="sendMessage()" style="color:white;border:none;cursor:pointer;font-size:14px;">
       Send
     </button>
   </div>
@@ -165,23 +180,26 @@
 
   function addMsg(role, text) {
     const box = document.getElementById('chat-messages');
-    // Clear placeholder on first message
     if (chatHistory.length === 0 && role === 'user') box.innerHTML = '';
     const div = document.createElement('div');
     div.style.margin = '10px 0';
-    div.style.padding = '8px 12px';
-    div.style.borderRadius = '6px';
+    div.style.padding = '10px 14px';
+    div.style.borderRadius = '10px';
+    div.style.lineHeight = '1.5';
     if (role === 'user') {
-      div.style.background = '#dbeafe';
+      div.style.background = 'linear-gradient(135deg, #eef2ff, #e0e7ff)';
+      div.style.borderLeft = '3px solid #6366f1';
       div.style.textAlign = 'right';
-      div.innerHTML = '<strong>You:</strong> ' + escapeHtml(text);
+      div.innerHTML = '<strong style="color:#4f46e5">You:</strong> ' + escapeHtml(text);
     } else if (role === 'assistant') {
-      div.style.background = '#f3f4f6';
-      div.innerHTML = '<strong>🤖 Agent:</strong><br>' + escapeHtml(text).replace(/\n/g, '<br>');
+      div.style.background = '#ffffff';
+      div.style.border = '1px solid #e2e8f0';
+      div.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)';
+      div.innerHTML = '<strong style="color:#10b981">🤖 Agent:</strong><br><span style="margin-top:4px;display:inline-block">' + escapeHtml(text).replace(/\n/g, '<br>') + '</span>';
     } else {
-      div.style.background = '#fef3c7';
+      div.style.background = '#fee2e2';
+      div.style.color = '#991b1b';
       div.style.fontStyle = 'italic';
-      div.style.color = '#92400e';
       div.innerHTML = text;
     }
     box.appendChild(div);
@@ -209,7 +227,8 @@
     const thinking = document.createElement('div');
     thinking.id = thinkingId;
     thinking.style.margin = '10px 0';
-    thinking.style.color = '#6b7280';
+    thinking.style.padding = '10px 14px';
+    thinking.style.color = '#64748b';
     thinking.style.fontStyle = 'italic';
     thinking.innerHTML = '🤔 Sochta hoon...';
     box.appendChild(thinking);

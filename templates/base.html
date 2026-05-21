@@ -4,45 +4,306 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Ecom Agent{% endblock %}</title>
-<script src="https://unpkg.com/htmx.org@2.0.3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f5f5f2;
+    /* Modern palette */
+    --bg: #f8fafc;
+    --bg-grad: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
     --card: #ffffff;
-    --ink: #1f1f1d;
-    --muted: #6b6b65;
-    --line: #e3e1d8;
-    --accent: #1d9e75;
-    --warn: #ba7517;
-    --danger: #a32d2d;
+    --ink: #0f172a;
+    --ink-2: #334155;
+    --muted: #64748b;
+    --muted-2: #94a3b8;
+    --line: #e2e8f0;
+    --line-2: #f1f5f9;
+
+    /* Brand colors */
+    --primary: #6366f1;
+    --primary-hov: #4f46e5;
+    --primary-soft: #eef2ff;
+    --accent: #10b981;
+    --accent-soft: #d1fae5;
+    --warn: #f59e0b;
+    --warn-soft: #fef3c7;
+    --danger: #ef4444;
+    --danger-soft: #fee2e2;
+    --purple: #8b5cf6;
+    --pink: #ec4899;
+    --teal: #14b8a6;
+
+    /* KPI gradients */
+    --grad-blue: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --grad-green: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --grad-orange: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+    --grad-red: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+    --shadow-md: 0 10px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+    --shadow-lg: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+
+    --radius: 14px;
+    --radius-sm: 8px;
   }
+
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-         background: var(--bg); color: var(--ink); }
-  header { background: var(--card); border-bottom: 1px solid var(--line); padding: 12px 24px;
-           display: flex; gap: 24px; align-items: center; }
-  header a { color: var(--ink); text-decoration: none; padding: 6px 10px; border-radius: 6px; }
-  header a:hover { background: var(--bg); }
-  header .brand { font-weight: 600; margin-right: auto; }
-  main { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-          padding: 20px; margin-bottom: 16px; }
-  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  @media (max-width: 720px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
-  .kpi-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-  .kpi-value { font-size: 32px; font-weight: 600; margin-top: 4px; }
-  h1 { font-size: 22px; font-weight: 500; margin: 0 0 16px; }
-  h2 { font-size: 18px; font-weight: 500; margin: 0 0 12px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 14px; }
-  th { font-weight: 500; color: var(--muted); }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-  .badge-warn { background: #FAEEDA; color: #633806; }
-  .badge-danger { background: #FCEBEB; color: #791F1F; }
-  .badge-ok { background: #E1F5EE; color: #085041; }
-  .row-list li { margin: 4px 0; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg-grad);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Header */
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 32px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.85);
+  }
+  header .brand {
+    font-weight: 700;
+    font-size: 17px;
+    margin-right: auto;
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+  }
+  header a {
+    color: var(--ink-2);
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  header a:hover { background: var(--primary-soft); color: var(--primary); }
+
+  main { max-width: 1280px; margin: 28px auto; padding: 0 32px; }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-md); }
+
+  /* Grids */
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+  @media (max-width: 900px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+  /* KPI Cards - Gradient */
+  .grid-4 .card {
+    position: relative;
+    overflow: hidden;
+    border: none;
+    color: white;
+    padding: 22px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .grid-4 .card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+  .grid-4 .card:nth-child(1) { background: var(--grad-blue); }
+  .grid-4 .card:nth-child(2) { background: var(--grad-orange); }
+  .grid-4 .card:nth-child(3) { background: var(--grad-green); }
+  .grid-4 .card:nth-child(4) { background: var(--grad-red); }
+
+  .grid-4 .kpi-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .grid-4 .kpi-value {
+    font-size: 38px;
+    font-weight: 700;
+    margin-top: 8px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .grid-4 .card::after {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 90px; height: 90px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+  }
+  .grid-4 .card::before {
+    content: '';
+    position: absolute;
+    bottom: -30px; right: -30px;
+    width: 60px; height: 60px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+  }
+
+  /* Default KPI (for inventory ledger) */
+  .kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 6px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+
+  /* Headings */
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 24px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line-2); }
+  th {
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--line-2);
+  }
+  th:first-child { border-top-left-radius: var(--radius-sm); }
+  th:last-child { border-top-right-radius: var(--radius-sm); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover { background: var(--line-2); }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .badge-warn { background: var(--warn-soft); color: #92400e; }
+  .badge-danger { background: var(--danger-soft); color: #991b1b; }
+  .badge-ok { background: var(--accent-soft); color: #065f46; }
+
+  /* Lists */
+  .row-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+  }
+  .row-list li {
+    padding: 10px 14px;
+    background: var(--line-2);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.15s;
+  }
+  .row-list li:hover { background: var(--primary-soft); }
+  .row-list li strong {
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .row-list li::after {
+    content: attr(data-count);
+  }
+
+  /* Chat panel styling */
+  #chat-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
+    border: 1px solid var(--line);
+  }
+  #chat-messages {
+    background: var(--bg) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius-sm) !important;
+  }
+  #chat-input {
+    border: 1.5px solid var(--line) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  #chat-input:focus {
+    outline: none;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px var(--primary-soft);
+  }
+  #chat-card button {
+    background: var(--primary) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 12px 22px !important;
+    font-weight: 600 !important;
+    transition: background 0.15s;
+  }
+  #chat-card button:hover { background: var(--primary-hov) !important; }
+
+  /* Section dividers - subtle backgrounds */
+  .card h2:has(+ table),
+  .card h2:has(+ p + table) {
+    margin-bottom: 18px;
+  }
+
+  /* Special accent for empty states */
+  p[style*="color:var(--muted)"] {
+    background: var(--line-2);
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    font-style: italic;
+  }
 </style>
 </head>
 <body>
@@ -50,7 +311,6 @@
   <span class="brand">📦 Ecom Agent</span>
   <a href="/">Dashboard</a>
   <a href="/shipments">Shipments</a>
-  <a href="/chat">Chat</a>
 </header>
 <main>
 {% block content %}{% endblock %}
