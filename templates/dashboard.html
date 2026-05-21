@@ -2,7 +2,47 @@
 {% block title %}Dashboard — Ecom Agent{% endblock %}
 {% block content %}
 
-<h1>Today's snapshot</h1>
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+  <h1 style="margin:0;">{{ report.filter.label or "Today" }}'s snapshot</h1>
+
+  <div class="filter-bar" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+    {% set p = report.filter.period or "today" %}
+    <a href="/?period=today"
+       class="fbtn {% if p == 'today' %}fbtn-active{% endif %}">Today</a>
+    <a href="/?period=last_7"
+       class="fbtn {% if p == 'last_7' %}fbtn-active{% endif %}">Last 7 days</a>
+    <a href="/?period=last_30"
+       class="fbtn {% if p == 'last_30' %}fbtn-active{% endif %}">Last 30 days</a>
+
+    <form method="get" action="/" style="display:flex; gap:6px; align-items:center; margin-left:6px;">
+      <input type="date" name="from_date" value="{{ report.filter.from }}"
+             style="padding:7px 10px; border:1.5px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px;" required>
+      <span style="color:var(--muted); font-size:13px;">→</span>
+      <input type="date" name="to_date" value="{{ report.filter.to }}"
+             style="padding:7px 10px; border:1.5px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px;" required>
+      <button type="submit" class="fbtn {% if p == 'custom' %}fbtn-active{% endif %}"
+              style="border:none; cursor:pointer; font-family:inherit;">Apply</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .fbtn {
+    display: inline-block;
+    padding: 7px 14px;
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink-2);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1.5px solid var(--line);
+    transition: all 0.15s;
+  }
+  .fbtn:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
+  .fbtn-active { background: var(--primary); color: white; border-color: var(--primary); }
+  .fbtn-active:hover { background: var(--primary-hov); color: white; }
+</style>
 
 <div class="grid-4">
   <div class="card">
@@ -10,11 +50,11 @@
     <div class="kpi-value">{{ report.new_orders.total_orders or report.new_orders.total or 0 }}</div>
   </div>
   <div class="card">
-    <div class="kpi-label">🚚 Booked Today</div>
+    <div class="kpi-label">🚚 Booked</div>
     <div class="kpi-value">{{ report.bookings_today.total_booked or report.bookings_today.total or 0 }}</div>
   </div>
   <div class="card">
-    <div class="kpi-label">✅ Delivered Today</div>
+    <div class="kpi-label">✅ Delivered</div>
     <div class="kpi-value">{{ report.delivered_today or 0 }}</div>
   </div>
   <div class="card">

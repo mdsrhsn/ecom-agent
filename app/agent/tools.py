@@ -142,6 +142,86 @@ def _date_range(days_back: int):
     return start_utc, end_utc
 
 
+def pkt_range(period: str = "today", from_date: str = None, to_date: str = None):
+    """
+    Return (start_utc, end_utc) for a Pakistan-time date window.
+
+    period:
+      - "today"     -> just today in PKT
+      - "last_7"    -> last 7 PKT days (including today)
+      - "last_30"   -> last 30 PKT days (including today)
+      - "custom"    -> use from_date / to_date (YYYY-MM-DD strings, inclusive)
+    """
+    PKT_OFFSET = timedelta(hours=5)
+    now_pkt = datetime.utcnow() + PKT_OFFSET
+    today_pkt = now_pkt.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if period == "custom" and from_date and to_date:
+        try:
+            f = datetime.strptime(from_date, "%Y-%m-%d")
+            t = datetime.strptime(to_date, "%Y-%m-%d")
+            start_pkt = f.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_pkt = (t + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        except ValueError:
+            # Fall back to today on bad input
+            start_pkt = today_pkt
+            end_pkt = today_pkt + timedelta(days=1)
+    elif period == "last_7":
+        start_pkt = today_pkt - timedelta(days=6)  # 7-day window including today
+        end_pkt = today_pkt + timedelta(days=1)
+    elif period == "last_30":
+        start_pkt = today_pkt - timedelta(days=29)  # 30-day window including today
+        end_pkt = today_pkt + timedelta(days=1)
+    else:  # today
+        start_pkt = today_pkt
+        end_pkt = today_pkt + timedelta(days=1)
+
+    # Convert PKT boundaries back to UTC for DB filter
+    return start_pkt - PKT_OFFSET, end_pkt - PKT_OFFSET
+
+
+def get_orders_in_range(db: Session, start, end, label: str = "today") -> dict:
+    """Same as get_daily_order_summary but accepts explicit UTC (start, end)."""
+    total = (
+        db.query(func.count(Order.id))
+        .filter(Order.created_at >= start, Order.created_at < end)
+        .scalar() or 0
+    )
+    rows = (
+        db.query(Order.city, func.count(Order.id))
+        .filter(Order.created_at >= start, Order.created_at < end)
+        .group_by(Order.city)
+        .order_by(func.count(Order.id).desc())
+        .all()
+    )
+    by_city = {(city or "Unknown"): cnt for city, cnt in rows}
+    return {
+        "date": label,
+        "total_orders": total,
+        "by_city": by_city,
+    }
+
+
+def get_bookings_in_range(db: Session, start, end, label: str = "today") -> dict:
+    """Same as get_courier_booking_summary but accepts explicit UTC (start, end)."""
+    rows = (
+        db.query(Shipment.courier, func.count(Shipment.id), func.sum(Shipment.pcs_count))
+        .filter(Shipment.booked_at >= start, Shipment.booked_at < end)
+        .group_by(Shipment.courier)
+        .all()
+    )
+    by_courier = {
+        courier: {"shipments": cnt, "pcs": int(pcs or 0)}
+        for courier, cnt, pcs in rows
+    }
+    total = sum(v["shipments"] for v in by_courier.values())
+    return {
+        "date": label,
+        "total_booked": total,
+        "by_courier": by_courier,
+    }
+
+
 def get_daily_order_summary(db: Session, days_back: int = 0) -> dict:
     start, end = _date_range(days_back)
     total = (
