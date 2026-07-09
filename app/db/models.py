@@ -132,3 +132,57 @@ class TeamMember(Base):
     email = Column(String)
     role = Column(String, default="agent")
     receives_alerts = Column(Boolean, default=True)
+
+
+class CustomerMessageLog(Base):
+    """Outbound / inbound WhatsApp messages to customers (dedupe + audit)."""
+    __tablename__ = "customer_message_logs"
+
+    id = Column(Integer, primary_key=True)
+    shipment_id = Column(Integer, ForeignKey("shipments.id"), index=True, nullable=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), index=True, nullable=True)
+
+    phone = Column(String, index=True, nullable=False)
+    direction = Column(String, default="outbound")  # outbound | inbound
+    message_type = Column(String, index=True, nullable=False)
+    # e.g. status_booked, status_delivered, feedback_request, followup, inbound_reply
+    status_key = Column(String, index=True, nullable=True)
+
+    body = Column(Text)
+    wa_message_id = Column(String, index=True)
+    success = Column(Boolean, default=True)
+    error = Column(Text)
+    sent_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        Index("ix_cust_msg_ship_type", "shipment_id", "message_type"),
+    )
+
+
+class CustomerConversation(Base):
+    """
+    Per-shipment conversation state for post-delivery feedback + follow-up.
+
+    States:
+      idle
+      awaiting_feedback   — delivered message sent, waiting for review
+      feedback_received   — customer replied with review
+      followup_sent       — asked if they need anything else
+      closed
+    """
+    __tablename__ = "customer_conversations"
+
+    id = Column(Integer, primary_key=True)
+    shipment_id = Column(Integer, ForeignKey("shipments.id"), unique=True, nullable=False, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), index=True, nullable=True)
+    phone = Column(String, index=True, nullable=False)
+
+    state = Column(String, default="idle", index=True)
+    feedback_text = Column(Text, nullable=True)
+    feedback_received_at = Column(DateTime, nullable=True)
+    followup_sent_at = Column(DateTime, nullable=True)
+    last_inbound_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    shipment = relationship("Shipment", backref="customer_conversation", uselist=False)

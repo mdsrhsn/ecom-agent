@@ -21,6 +21,13 @@ class Settings(BaseSettings):
 
     WHATSAPP_PHONE_ID: str = ""
     WHATSAPP_ACCESS_TOKEN: str = ""
+    WHATSAPP_VERIFY_TOKEN: str = "ecom-agent-verify"
+    WHATSAPP_APP_SECRET: str = ""  # optional Meta app secret for inbound HMAC
+
+    # Customer WhatsApp automation (status updates + delivery feedback)
+    CUSTOMER_WHATSAPP_ENABLED: bool = True
+    CUSTOMER_FORWARD_UNMATCHED_TO_TEAM: bool = True
+    STORE_NAME: str = "Women Comforts"
 
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587

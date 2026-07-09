@@ -8,7 +8,9 @@ DD_STATUS_MAP = {
     "Pickup Done": "arrived_warehouse",
     "At Warehouse": "arrived_warehouse",
     "In Transit": "in_transit",
-    "Out For Delivery": "in_transit",
+    "Dispatched": "in_transit",
+    "Out For Delivery": "out_for_delivery",
+    "Out for Delivery": "out_for_delivery",
     "Delivered": "delivered",
     "Hold": "return_in_process",
     "Reattempt": "return_in_process",
@@ -31,8 +33,12 @@ def normalize_status(raw: str) -> str:
         return "return_to_shipper"
     if "return" in lower:
         return "return_in_process"
-    if "deliver" in lower:
+    if "out for delivery" in lower or "out-for-delivery" in lower:
+        return "out_for_delivery"
+    if "deliver" in lower and "out" not in lower:
         return "delivered"
+    if "transit" in lower or "dispatch" in lower:
+        return "in_transit"
     return "unknown"
 
 
