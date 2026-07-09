@@ -12,7 +12,8 @@ AI agent for Shopify + multi-courier ecommerce. Tracks orders from creation to d
 6. **Inventory ledger** — live tally of pieces sent / paid / returned / pending
 7. **Return state tracking** — `return_in_process` (under decision) vs `return_to_shipper` (confirmed coming back), tracked separately
 8. **Notifications** — owner + team via WhatsApp + email + web dashboard
-9. **Chat agent** — Claude Sonnet 4.5 powered, answers natural Roman Urdu queries
+9. **Customer WhatsApp agent** — courier status changes auto-message the customer (dispatch, in-transit, out for delivery, delivered, returns). On delivery, asks for product feedback; after the review, sends a follow-up offer for more help / products
+10. **Chat agent** — Claude Sonnet 4.5 powered, answers natural Roman Urdu queries
 
 ## Tech stack
 
@@ -71,12 +72,42 @@ The agent identifies courier in this priority order:
 All couriers map to a single status vocabulary:
 - `booked` — order booked, awaiting pickup
 - `arrived_warehouse` — courier picked up parcel
-- `in_transit` — out for delivery
+- `in_transit` — dispatched / moving between hubs
+- `out_for_delivery` — rider out for delivery today
 - `delivered` — delivered to customer
 - `return_in_process` — pending return decision
 - `return_to_shipper` — confirmed coming back
 - `received_back` — back in your warehouse
 - `cancelled` / `lost`
+
+## Customer WhatsApp automation
+
+Every 3 hours the poller reads courier APIs. On each **new** status, the customer gets a Roman Urdu WhatsApp update (deduped per shipment + status).
+
+| Status | Customer message |
+|---|---|
+| `booked` | Order booked + tracking |
+| `arrived_warehouse` | Parcel at courier warehouse |
+| `in_transit` | Dispatched / in transit |
+| `out_for_delivery` | Rider out today — keep phone on |
+| `delivered` | Delivered + feedback questions (product, completeness, quality, issues) |
+| `return_in_process` / `return_to_shipper` / `received_back` | Return updates + help offer |
+| `cancelled` | Cancel notice |
+
+**Feedback loop:** after delivery feedback arrives on WhatsApp, the agent stores the review, notifies the team, then asks if the customer needs another product or any help.
+
+### Meta WhatsApp webhook
+
+In Meta Developer Console → WhatsApp → Configuration:
+
+| Event | URL |
+|---|---|
+| Webhook callback | `https://your-app.railway.app/webhooks/whatsapp` |
+| Verify token | `WHATSAPP_VERIFY_TOKEN` env var |
+
+Subscribe to the `messages` field. Optional: set `WHATSAPP_APP_SECRET` to verify `X-Hub-Signature-256`.
+
+Toggle with `CUSTOMER_WHATSAPP_ENABLED=true|false`.
 
 ## Inventory formula
 
@@ -108,13 +139,14 @@ app/
 │   ├── digidokaan.py       # DigiDokaan API + status map
 │   ├── couriers.py         # unified dispatcher
 │   ├── whatsapp.py         # Meta Cloud API v21.0
+│   ├── customer_messaging.py  # status templates + feedback/follow-up agent
 │   └── email.py            # SMTP
 ├── agent/
 │   ├── tools.py            # 9 tool specs + implementations
 │   └── claude_client.py    # agentic loop, max 6 rounds
 ├── jobs.py                 # poll_active_shipments, daily_summary
 └── routes/
-    ├── api.py              # webhooks + /agent/chat
+    ├── api.py              # Shopify + WhatsApp webhooks + /agent/chat
     └── dashboard.py        # HTML + summary JSON
 
 templates/

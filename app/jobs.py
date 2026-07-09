@@ -44,7 +44,10 @@ def _flag_critical(db):
     cutoff = datetime.utcnow() - timedelta(days=3)
     shipments = db.query(Shipment).filter(
         Shipment.booked_at <= cutoff,
-        Shipment.current_status.in_(["booked", "arrived_warehouse", "in_transit", "return_in_process"]),
+        Shipment.current_status.in_([
+            "booked", "arrived_warehouse", "in_transit",
+            "out_for_delivery", "return_in_process",
+        ]),
         Shipment.delivered_at.is_(None),
     ).all()
     for sh in shipments:

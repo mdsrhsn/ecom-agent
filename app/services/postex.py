@@ -16,7 +16,8 @@ POSTEX_STATUS_MAP = {
     "Received at Warehouse": "arrived_warehouse",
     "Dispatched": "in_transit",
     "In Transit": "in_transit",
-    "Out for Delivery": "in_transit",
+    "Out for Delivery": "out_for_delivery",
+    "Out For Delivery": "out_for_delivery",
     "Delivered": "delivered",
     "Attempted": "return_in_process",
     "Customer Refused": "return_in_process",
@@ -46,6 +47,8 @@ def normalize_status(raw: str) -> str:
         return "return_to_shipper"
     if "return" in lower and "process" in lower:
         return "return_in_process"
+    if "out for delivery" in lower or "out-for-delivery" in lower:
+        return "out_for_delivery"
     if "deliver" in lower and "out" not in lower:
         return "delivered"
     if "transit" in lower or "dispatch" in lower:

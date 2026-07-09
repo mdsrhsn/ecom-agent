@@ -284,7 +284,10 @@ def get_warehouse_arrivals(db: Session, days_back: int = 0) -> dict:
 
 def get_critical_shipments(db: Session, min_days: int = 3) -> dict:
     cutoff = datetime.utcnow() - timedelta(days=min_days)
-    active = ["booked", "arrived_warehouse", "in_transit", "return_in_process"]
+    active = [
+        "booked", "arrived_warehouse", "in_transit",
+        "out_for_delivery", "return_in_process",
+    ]
     rows = (
         db.query(Shipment, Order)
         .join(Order, Shipment.order_id == Order.id)
@@ -406,6 +409,8 @@ def get_returns_breakdown(db: Session) -> dict:
 
 
 async def refresh_shipment_tracking(db: Session, tracking_number: str) -> dict:
+    from app.services.customer_messaging import notify_customer_status_change
+
     sh = db.query(Shipment).filter(Shipment.tracking_number == tracking_number).first()
     if not sh:
         return {"error": f"Shipment {tracking_number} not found"}
@@ -433,6 +438,11 @@ async def refresh_shipment_tracking(db: Session, tracking_number: str) -> dict:
             raw_status=result.get("raw_status", ""),
             description=result.get("description", ""),
         ))
+        db.flush()
+
+        customer_notify = await notify_customer_status_change(
+            db, sh, new_status, old_status=old_status
+        )
         db.commit()
         return {
             "tracking": tracking_number,
@@ -441,6 +451,7 @@ async def refresh_shipment_tracking(db: Session, tracking_number: str) -> dict:
             "new_status": new_status,
             "raw_status": result.get("raw_status", ""),
             "description": result.get("description", ""),
+            "customer_notify": customer_notify,
         }
 
     return {
