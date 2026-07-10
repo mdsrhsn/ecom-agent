@@ -104,6 +104,52 @@ def _parse_iso(s):
         return None
 
 
+def parse_fulfillment_payload(payload: dict) -> dict:
+    """
+    Build a minimal Order dict from a *fulfillment* webhook payload.
+
+    Used when a fulfillment arrives for an order we never received an
+    orders/create webhook for (e.g. old orders booked after the app went live).
+    The fulfillment payload already carries destination + line items + the
+    courier name, so we can create the order WITHOUT calling the Shopify API
+    (no access token needed).
+    """
+    dest = payload.get("destination") or {}
+    line_items = payload.get("line_items", [])
+    pcs = sum(int(li.get("quantity", 0) or 0) for li in line_items)
+    # COD proxy = sum(price * qty) of fulfilled line items (exact amount later
+    # comes from the courier settlement during payment ingestion).
+    cod = 0.0
+    for li in line_items:
+        try:
+            cod += float(li.get("price") or 0) * int(li.get("quantity", 0) or 0)
+        except (TypeError, ValueError):
+            pass
+
+    name = dest.get("name") or (
+        f"{dest.get('first_name', '')} {dest.get('last_name', '')}".strip()
+    )
+    tags = payload.get("tags", "")  # fulfillment payloads rarely carry tags
+    tracking_company = payload.get("tracking_company", "")
+
+    return {
+        "shopify_order_id": str(payload.get("order_id")),
+        "order_number": str(payload.get("name", "")),  # e.g. "#WC6686.1"
+        "customer_name": name,
+        "customer_phone": dest.get("phone", "") or "",
+        "customer_address": dest.get("address1", "") or "",
+        "city": (dest.get("city") or "").strip(),
+        "province": dest.get("province", "") or "",
+        "total_amount": cod,
+        "cod_amount": cod,
+        "items_count": pcs,
+        "shopify_tags": tags,
+        # tracking_company ("PostEx") is the reliable courier hint here:
+        "courier_hint": detect_courier_from_tags(f"{tags},{tracking_company}") or "unknown",
+        "created_at": _parse_iso(payload.get("created_at")) or datetime.utcnow(),
+    }
+
+
 def parse_order_payload(payload: dict) -> dict:
     shipping = payload.get("shipping_address") or payload.get("billing_address") or {}
     line_items = payload.get("line_items", [])

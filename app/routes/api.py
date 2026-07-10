@@ -4,7 +4,12 @@ from sqlalchemy.orm import Session
 from app.auth import require_key
 from app.db.session import get_db
 from app.db.models import Order, Shipment
-from app.services.shopify import verify_webhook, parse_order_payload, detect_courier
+from app.services.shopify import (
+    verify_webhook,
+    parse_order_payload,
+    parse_fulfillment_payload,
+    detect_courier,
+)
 from app.agent.claude_client import chat as agent_chat
 
 router = APIRouter()
@@ -54,18 +59,36 @@ async def shopify_fulfillment_created(request: Request, db: Session = Depends(ge
 
     payload = await request.json()
     order_id = str(payload.get("order_id"))
-    tracking_number = payload.get("tracking_number")
+    tracking_number = (
+        payload.get("tracking_number")
+        or (payload.get("tracking_numbers") or [None])[0]
+    )
     if not tracking_number:
         return {"status": "no tracking number"}
 
     order = db.query(Order).filter(Order.shopify_order_id == order_id).first()
+
+    # If we never saw this order (e.g. an OLD order booked after the app went
+    # live), build it from the fulfillment payload itself — no Shopify API /
+    # access token needed. This makes every booked parcel trackable.
+    created_order = False
     if not order:
-        return {"status": "order not found"}
+        order_data = parse_fulfillment_payload(payload)
+        order = Order(**order_data)
+        db.add(order)
+        db.commit()
+        db.refresh(order)
+        created_order = True
 
     if db.query(Shipment).filter(Shipment.tracking_number == tracking_number).first():
         return {"status": "shipment already exists"}
 
-    courier = detect_courier(order.shopify_tags, tracking_number)
+    # tracking_company (e.g. "PostEx") is the most reliable courier hint on a
+    # fulfillment, since the numeric tracking number has no courier prefix.
+    tracking_company = payload.get("tracking_company", "")
+    courier = detect_courier(
+        f"{order.shopify_tags or ''},{tracking_company}", tracking_number
+    )
     sh = Shipment(
         order_id=order.id,
         courier=courier,
@@ -76,7 +99,12 @@ async def shopify_fulfillment_created(request: Request, db: Session = Depends(ge
     )
     db.add(sh)
     db.commit()
-    return {"status": "ok", "shipment_id": sh.id, "courier": courier}
+    return {
+        "status": "ok",
+        "shipment_id": sh.id,
+        "courier": courier,
+        "order_created_from_fulfillment": created_order,
+    }
 
 
 @router.post("/agent/chat")
