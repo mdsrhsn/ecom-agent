@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.auth import require_key
 from app.db.models import Shipment
 from app.db.session import get_db
 from app.agent.tools import (
@@ -100,6 +101,7 @@ async def dashboard(
     from_date: str = None,
     to_date: str = None,
     db: Session = Depends(get_db),
+    _auth: bool = Depends(require_key),
 ):
     # If custom dates provided, force period=custom
     if from_date and to_date:
@@ -116,6 +118,7 @@ async def summary(
     from_date: str = None,
     to_date: str = None,
     db: Session = Depends(get_db),
+    _auth: bool = Depends(require_key),
 ):
     if from_date and to_date:
         period = "custom"

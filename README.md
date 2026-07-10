@@ -12,12 +12,12 @@ AI agent for Shopify + multi-courier ecommerce. Tracks orders from creation to d
 6. **Inventory ledger** — live tally of pieces sent / paid / returned / pending
 7. **Return state tracking** — `return_in_process` (under decision) vs `return_to_shipper` (confirmed coming back), tracked separately
 8. **Notifications** — owner + team via WhatsApp + email + web dashboard
-9. **Chat agent** — Claude Sonnet 4.5 powered, answers natural Roman Urdu queries
+9. **Chat agent** — Google Gemini powered, answers natural Roman Urdu queries
 
 ## Tech stack
 
 - FastAPI (webhooks + dashboard)
-- Anthropic SDK (claude-sonnet-4-5) with 9 custom tools
+- Google Gemini (gemini-2.5-flash-lite) agentic loop with 9 custom tools
 - SQLAlchemy + Postgres (Railway addon) / SQLite for local dev
 - APScheduler (3-hourly tracking poll + daily 9 AM PKT summary)
 - Jinja2 dashboard with auto-refresh chat panel
@@ -44,6 +44,21 @@ Visit `http://localhost:8000` for dashboard.
 4. Set env vars from `.env.example`
 5. Deploy — Procfile handles startup
 
+## Access control
+
+The dashboard and `/agent/chat` expose live business data, so they are gated behind
+a shared secret (`APP_SECRET`). In production, set a real `APP_SECRET` and open the
+dashboard as:
+
+```
+https://your-app.railway.app/?key=YOUR_APP_SECRET
+```
+
+Programmatic calls can instead send an `X-API-Key: YOUR_APP_SECRET` header. If
+`APP_SECRET` is left as `change-me`, the check is disabled (handy for local dev).
+Shopify webhooks are not gated by this key — they authenticate via HMAC using
+`SHOPIFY_WEBHOOK_SECRET`.
+
 ## Shopify webhook config
 
 In Shopify admin → Settings → Notifications → Webhooks, add:
@@ -51,7 +66,7 @@ In Shopify admin → Settings → Notifications → Webhooks, add:
 | Event | URL |
 |---|---|
 | `orders/create` | `https://your-app.railway.app/webhooks/shopify/orders-create` |
-| `fulfillments/create` | `https://your-app.railway.app/webhooks/shopify/fulfillments-create` |
+| `fulfillments/create` (Shopify event) | `https://your-app.railway.app/webhooks/shopify/fulfillment-create` |
 
 Set webhook secret = `SHOPIFY_WEBHOOK_SECRET` env var.
 

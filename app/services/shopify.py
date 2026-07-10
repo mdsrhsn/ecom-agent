@@ -32,8 +32,6 @@ TRACKING_PREFIXES = {
     "LP": "leopards",
     "LCS": "leopards",
     "TCS": "tcs",
-    "AV": "avix",
-    "AVX": "avix",
 }
 
 # Shopify tag values (manual hint)
@@ -47,7 +45,6 @@ TAG_MAP = {
     "leopards": "leopards",
     "lcs": "leopards",
     "tcs": "tcs",
-    "avix": "avix",
 }
 
 

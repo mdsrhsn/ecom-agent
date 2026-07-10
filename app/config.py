@@ -13,13 +13,11 @@ class Settings(BaseSettings):
     SHOPIFY_WEBHOOK_SECRET: str = ""
 
     POSTEX_API_KEY: str = ""
-    POSTEX_BASE_URL: str = "https://api.postex.pk/services/integration/api/order/v3"
+    POSTEX_BASE_URL: str = "https://api.postex.pk/services/integration/api/order/v1"
     DAEWOO_API_KEY: str = ""
     DAEWOO_BASE_URL: str = ""
     DIGIDOKAAN_API_KEY: str = ""
     DIGIDOKAAN_BASE_URL: str = ""
-    AVIX_API_KEY: str = ""
-    AVIX_BASE_URL: str = ""
 
     WHATSAPP_PHONE_ID: str = ""
     WHATSAPP_ACCESS_TOKEN: str = ""

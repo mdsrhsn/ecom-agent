@@ -1,6 +1,7 @@
 """Webhooks + agent chat API."""
 from fastapi import APIRouter, Request, HTTPException, Depends
 from sqlalchemy.orm import Session
+from app.auth import require_key
 from app.db.session import get_db
 from app.db.models import Order, Shipment
 from app.services.shopify import verify_webhook, parse_order_payload, detect_courier
@@ -79,7 +80,11 @@ async def shopify_fulfillment_created(request: Request, db: Session = Depends(ge
 
 
 @router.post("/agent/chat")
-async def chat_with_agent(request: Request, db: Session = Depends(get_db)):
+async def chat_with_agent(
+    request: Request,
+    db: Session = Depends(get_db),
+    _auth: bool = Depends(require_key),
+):
     body = await request.json()
     user_message = (body.get("message") or "").strip()
     history = body.get("history", [])
