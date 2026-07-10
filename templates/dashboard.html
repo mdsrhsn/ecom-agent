@@ -275,9 +275,10 @@
     box.scrollTop = box.scrollHeight;
 
     try {
+      const apiKey = new URLSearchParams(window.location.search).get('key') || '';
       const res = await fetch('/agent/chat', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', 'X-API-Key': apiKey},
         body: JSON.stringify({message: message, history: chatHistory.slice(0, -1)}),
       });
       document.getElementById(thinkingId)?.remove();
